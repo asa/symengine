@@ -150,6 +150,12 @@ void TransformVisitor::bvisit(const Basic &x)
     result_ = x.rcp_from_this();
 }
 
+void TransformVisitor::bvisit(const DataBufferElement &x)
+{
+    auto new_i = apply(x.get_i());
+    result_ = data_buffer_element(x.get_name(), new_i);
+}
+
 void TransformVisitor::bvisit(const Add &x)
 {
     vec_basic newargs;
@@ -232,8 +238,12 @@ void CountOpsVisitor::bvisit(const Mul &x)
         apply(*x.get_coef());
     }
 
+    unsigned inverses = 0;
     for (const auto &p : x.get_dict()) {
-        if (neq(*p.second, *one)) {
+        if (eq(*p.second, *minus_one)) {
+            // multiplying by x^{-1} is just dividing by x
+            inverses++;
+        } else if (neq(*p.second, *one)) {
             count++;
             apply(*p.second);
         }
@@ -241,6 +251,11 @@ void CountOpsVisitor::bvisit(const Mul &x)
         count++;
     }
     count--;
+    if (inverses == x.get_dict().size()) {
+        // If every term is an inverse, at least one inverse must be
+        // done directly, rather than implicitly via a division.
+        count++;
+    }
 }
 
 void CountOpsVisitor::bvisit(const Add &x)
@@ -250,15 +265,22 @@ void CountOpsVisitor::bvisit(const Add &x)
         apply(*x.get_coef());
     }
 
-    unsigned i = 0;
+    unsigned negatives = 0;
     for (const auto &p : x.get_dict()) {
-        if (neq(*p.second, *one)) {
+        if (eq(*p.second, *minus_one)) {
+            // Adding a term with a coefficient of -1 is the same as
+            // subtraction.
+            negatives++;
+        } else if (neq(*p.second, *one)) {
             count++;
             apply(*p.second);
         }
         apply(*p.first);
         count++;
-        i++;
+    }
+    if (negatives == x.get_dict().size()) {
+        // At least one negation must be performed if every term is negative.
+        count++;
     }
     count--;
 }

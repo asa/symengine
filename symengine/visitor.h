@@ -24,6 +24,7 @@
 #include <symengine/nan.h>
 #include <symengine/matrix.h>
 #include <symengine/symengine_casts.h>
+#include <symengine/data_buffer_element.h>
 
 namespace SymEngine
 {
@@ -143,7 +144,7 @@ public:
 
     void bvisit(const Add &x)
     {
-        umap_basic_num dict;
+        add_operands_map dict;
         RCP<const Number> coef = zero;
         for (auto &p : x.get_dict()) {
             p.first->accept(*this);
@@ -253,6 +254,7 @@ public:
     void bvisit(const Mul &x);
     void bvisit(const Pow &x);
     void bvisit(const OneArgFunction &x);
+    void bvisit(const DataBufferElement &x);
 
     template <class T>
     void bvisit(const TwoArgBasic<T> &x)

@@ -323,7 +323,7 @@ bool handle_minus(const RCP<const Basic> &arg,
     } else if (is_a<Add>(*arg)) {
         if (could_extract_minus(*arg)) {
             const Add &s = down_cast<const Add &>(*arg);
-            umap_basic_num d = s.get_dict();
+            add_operands_map d = s.get_dict();
             for (auto &p : d) {
                 p.second = p.second->mul(*minus_one);
             }
@@ -606,12 +606,14 @@ RCP<const Basic> floor(const RCP<const Basic> &arg)
         throw SymEngineException(
             "Boolean objects not allowed in this context.");
     }
+
+    // This block makes the simplification floor(int + val) = int + floor(val)
     if (is_a<Add>(*arg)) {
         RCP<const Number> s = down_cast<const Add &>(*arg).get_coef();
-        umap_basic_num d = down_cast<const Add &>(*arg).get_dict();
-        if (is_a<Integer>(*s)) {
+        add_operands_map d = down_cast<const Add &>(*arg).get_dict();
+        if (is_a<Integer>(*s) and not down_cast<const Integer &>(*s).is_zero()) {
             return add(
-                s, make_rcp<const Floor>(Add::from_dict(zero, std::move(d))));
+                s, floor(Add::from_dict(zero, std::move(d))));
         }
     }
     return make_rcp<const Floor>(arg);
@@ -700,12 +702,14 @@ RCP<const Basic> ceiling(const RCP<const Basic> &arg)
         throw SymEngineException(
             "Boolean objects not allowed in this context.");
     }
+
+    // This block makes the simplification ceil(int + val) = int + ceil(val)
     if (is_a<Add>(*arg)) {
         RCP<const Number> s = down_cast<const Add &>(*arg).get_coef();
-        umap_basic_num d = down_cast<const Add &>(*arg).get_dict();
-        if (is_a<Integer>(*s)) {
+        add_operands_map d = down_cast<const Add &>(*arg).get_dict();
+        if (is_a<Integer>(*s) and not down_cast<const Integer &>(*s).is_zero()) {
             return add(
-                s, make_rcp<const Ceiling>(Add::from_dict(zero, std::move(d))));
+                s, ceiling(Add::from_dict(zero, std::move(d))));
         }
     }
     return make_rcp<const Ceiling>(arg);
@@ -796,7 +800,7 @@ RCP<const Basic> truncate(const RCP<const Basic> &arg)
     }
     if (is_a<Add>(*arg)) {
         RCP<const Number> s = down_cast<const Add &>(*arg).get_coef();
-        umap_basic_num d = down_cast<const Add &>(*arg).get_dict();
+        add_operands_map d = down_cast<const Add &>(*arg).get_dict();
         if (is_a<Integer>(*s)) {
             return add(s, make_rcp<const Truncate>(
                               Add::from_dict(zero, std::move(d))));
