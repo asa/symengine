@@ -8,17 +8,20 @@ std::string MatrixBase::__str__() const
     std::ostringstream o;
 
     // Check for uninitialized values.
-    if (nrows() > 0 && this->get(0, 0).is_null()) {
+    if (nrows() > 0 && ncols() > 0 && this->get(0, 0).is_null()) {
         o << "<Matrix(" << nrows() << ", " << ncols() << ") uninitialized>";
         return o.str();
     }
 
     for (unsigned i = 0; i < nrows(); i++) {
         o << "[";
-        for (unsigned j = 0; j < ncols() - 1; j++) {
+        for (unsigned j = 0; j + 1 < ncols(); j++) {
             o << *this->get(i, j) << ", ";
         }
-        o << *this->get(i, ncols() - 1) << "]" << std::endl;
+        if (ncols() > 0) {
+            o << *this->get(i, ncols() - 1);
+        }
+        o << "]" << std::endl;
     }
 
     return o.str();
@@ -47,7 +50,7 @@ hash_t MatrixBase::hash() const
     hash_combine<unsigned>(seed, nrows());
     hash_combine<unsigned>(seed, ncols());
     for (unsigned i = 0; i < this->nrows(); i++) {
-        for (unsigned j = 0; j < this->nrows(); j++) {
+        for (unsigned j = 0; j < this->ncols(); j++) {
             hash_combine<Basic>(seed, *get(i, j));
         }
     }
